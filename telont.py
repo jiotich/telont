@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import urllib.request
+from urllib.error import HTTPError
 import os
 from time import sleep
 import random
@@ -41,8 +42,10 @@ def findWikiImageLinks(soupHtml):
         return link['src']
     #print(">got image links")
 
-def findAllWikiArtLinks(soupHtml):
+def findAllWikiArtLinks(soupHtml,highRes=False):
     allLinks = soupHtml.find_all("li","painting-list-text-row")
+    pathway = "%s_high_res" % (artist.lower().replace(" ", "-")) if highRes else "%s" % (artist.lower().replace(" ", "-"))
+    pathway_og = pathway
     allPaintingPages = {}
     imageLinks = {}
     c = 1
@@ -54,12 +57,12 @@ def findAllWikiArtLinks(soupHtml):
         #print(f"{link.contents[1].contents}\n")#titulos
         allPaintingPages[link.contents[1].contents[0]]=f"http://wikiart.org{link.contents[1]['href']}"
     #print(">links to images")
-    
-    if not os.path.isdir(artist.lower().replace(" ", "-")):
-        os.mkdir(artist.lower().replace(" ", "-"))
+    print(pathway)
+    if not os.path.isdir(pathway):
+            os.mkdir(pathway)
         
     for link in allPaintingPages:
-        pathway = "%s/%s.jpg" % (artist.lower().replace(" ", "-"),link)
+        pathway = f"{pathway_og}/{link}.jpg"
         if not os.path.isfile(pathway):
             print(f"[{c}/{len(allPaintingPages)}] Downloading {link}")
             sleep(random.randrange(0,4))
@@ -69,7 +72,16 @@ def findAllWikiArtLinks(soupHtml):
                 imageLinks[link] = findWikiImageLinks(soup)
                 
                 try:
-                    urllib.request.urlretrieve(imageLinks[link],pathway)
+                    if highRes:
+                        urllib.request.urlretrieve(imageLinks[link][:len(imageLinks[link])-10],pathway)
+                    else:
+                        urllib.request.urlretrieve(imageLinks[link],pathway)
+                
+                except HTTPError as e:
+                    if not os.path.isfile(pathway):
+                        urllib.request.urlretrieve(imageLinks[link],pathway)
+                        print(2,imageLinks[link])
+                    
                 except Exception as e:
                     print(">Error:",e)
                     pass
@@ -89,4 +101,4 @@ print(instructions)
 input("Pressione enter para proceder.\n")
 user = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0"}
 artist = str(input("Nome do artista: "))
-linkAndTitleDict = findAllWikiArtLinks(getHtmlSoup(wikiArtGetArtist(artist)))
+linkAndTitleDict = findAllWikiArtLinks(getHtmlSoup(wikiArtGetArtist(artist)), highRes=False)
