@@ -1,4 +1,4 @@
-Simple python script to fully download an artist's works on wikiart.org
+Simple python script to fully download an artist's works on wikiart.org or invaluable.com.
 
 Usage: input artists name in the most common way, usually in the "FirstName LastName" format, ex: Claude Monet, Tarsila do Amaral, Vincent Van Gogh
 there are some exceptions such as Caravaggio.
